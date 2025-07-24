@@ -98,7 +98,7 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
                         <User className="w-4 h-4 text-white" />
                       </div>
                       <div className="hidden md:block text-left">
-                        <p className="text-sm font-medium">Dr. Sarah Johnson</p>
+                        <p className="text-sm font-medium">Dr. Ronald Tombe</p>
                         <p className="text-xs text-muted-foreground">Chief Surgeon</p>
                       </div>
                     </Button>
