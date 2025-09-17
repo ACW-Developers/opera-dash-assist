@@ -14,7 +14,184 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      patients: {
+        Row: {
+          address: string | null
+          allergies: string | null
+          created_at: string
+          current_medications: string | null
+          date_of_birth: string
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          gender: string | null
+          id: string
+          last_name: string
+          medical_history: string | null
+          patient_id: string
+          phone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          allergies?: string | null
+          created_at?: string
+          current_medications?: string | null
+          date_of_birth: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          gender?: string | null
+          id?: string
+          last_name: string
+          medical_history?: string | null
+          patient_id: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          allergies?: string | null
+          created_at?: string
+          current_medications?: string | null
+          date_of_birth?: string
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          gender?: string | null
+          id?: string
+          last_name?: string
+          medical_history?: string | null
+          patient_id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      procedure_outcomes: {
+        Row: {
+          created_at: string
+          follow_up_date: string | null
+          follow_up_required: boolean | null
+          id: string
+          outcome_description: string | null
+          outcome_type: string | null
+          patient_satisfaction_score: number | null
+          procedure_id: string | null
+          recovery_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          outcome_description?: string | null
+          outcome_type?: string | null
+          patient_satisfaction_score?: number | null
+          procedure_id?: string | null
+          recovery_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          outcome_description?: string | null
+          outcome_type?: string | null
+          patient_satisfaction_score?: number | null
+          procedure_id?: string | null
+          recovery_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_outcomes_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surgical_procedures: {
+        Row: {
+          actual_date: string | null
+          anesthesia_type: string | null
+          assistant_surgeon: string | null
+          complications: string | null
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          operative_notes: string | null
+          patient_id: string | null
+          post_operative_notes: string | null
+          pre_operative_notes: string | null
+          procedure_name: string
+          procedure_type: string | null
+          scheduled_date: string | null
+          status: string | null
+          surgeon_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          actual_date?: string | null
+          anesthesia_type?: string | null
+          assistant_surgeon?: string | null
+          complications?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          operative_notes?: string | null
+          patient_id?: string | null
+          post_operative_notes?: string | null
+          pre_operative_notes?: string | null
+          procedure_name: string
+          procedure_type?: string | null
+          scheduled_date?: string | null
+          status?: string | null
+          surgeon_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          actual_date?: string | null
+          anesthesia_type?: string | null
+          assistant_surgeon?: string | null
+          complications?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          operative_notes?: string | null
+          patient_id?: string | null
+          post_operative_notes?: string | null
+          pre_operative_notes?: string | null
+          procedure_name?: string
+          procedure_type?: string | null
+          scheduled_date?: string | null
+          status?: string | null
+          surgeon_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgical_procedures_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
