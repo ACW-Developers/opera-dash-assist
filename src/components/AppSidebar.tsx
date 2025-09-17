@@ -111,7 +111,7 @@ export function AppSidebar() {
             {!isCollapsed && (
               <div>
                 <h1 className="text-lg font-bold text-sidebar-foreground">
-                  SurgTrack Pro
+                  AIAA-NGO
                 </h1>
                 <p className="text-sm text-sidebar-foreground/70">
                   Surgery Management System
