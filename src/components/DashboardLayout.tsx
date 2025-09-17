@@ -35,7 +35,6 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
                 {title && (
                   <div>
                     <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-                    {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
                   </div>
                 )}
               </div>
