@@ -15,6 +15,7 @@ import SurgeryTracking from "./pages/SurgeryTracking";
 import PostOperative from "./pages/PostOperative";
 import FeedbackPlatform from "./pages/FeedbackPlatform";
 import RecordsManagement from "./pages/RecordsManagement";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => {
           <Route path="/postoperative" element={<DashboardLayout title="Post-operative Care" subtitle="Recovery monitoring and follow-up"><PostOperative /></DashboardLayout>} />
           <Route path="/feedback" element={<DashboardLayout title="Feedback Platform" subtitle="Patient and specialist feedback system"><FeedbackPlatform /></DashboardLayout>} />
           <Route path="/records" element={<DashboardLayout title="Records Management" subtitle="Patient data and surgical history"><RecordsManagement /></DashboardLayout>} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,11 +22,35 @@ import {
   Edit
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePatients } from "@/hooks/usePatients"; 
+import { useProcedures } from "@/hooks/useProcedures";
+import PatientForm from "@/components/PatientForm";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function DoctorAnalysis() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [activeTab, setActiveTab] = useState("pending");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { patients } = usePatients();
+  const { procedures, addProcedure } = useProcedures();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const pendingPatients = [
     {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,93 +23,110 @@ import {
   Heart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useProcedures } from "@/hooks/useProcedures";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SurgeryTracking() {
   const [activeTab, setActiveTab] = useState("live");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { procedures, updateProcedure } = useProcedures();
 
-  const liveSurgeries = [
-    {
-      id: "S001",
-      patientName: "John Doe",
-      patientId: "P001",
-      procedure: "Laparoscopic Appendectomy",
-      surgeon: "Dr. Smith",
-      assistants: ["Dr. Johnson", "Nurse Williams"],
-      startTime: "09:00 AM",
-      estimatedDuration: "60 minutes",
-      currentDuration: "45 minutes",
-      progress: 75,
-      status: "In Progress",
-      room: "OR 1",
-      phase: "Laparoscopic exploration",
-      vitalSigns: {
-        heartRate: "72 bpm",
-        bloodPressure: "120/80 mmHg",
-        oxygenSat: "98%",
-        temperature: "98.6°F"
-      }
-    },
-    {
-      id: "S002", 
-      patientName: "Jane Smith",
-      patientId: "P002",
-      procedure: "Cholecystectomy",
-      surgeon: "Dr. Johnson",
-      assistants: ["Dr. Brown", "Nurse Davis"],
-      startTime: "02:30 PM",
-      estimatedDuration: "90 minutes",
-      currentDuration: "30 minutes", 
-      progress: 33,
-      status: "In Progress",
-      room: "OR 2",
-      phase: "Port placement",
-      vitalSigns: {
-        heartRate: "78 bpm",
-        bloodPressure: "110/70 mmHg",
-        oxygenSat: "99%",
-        temperature: "98.4°F"
-      }
-    }
-  ];
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    };
 
-  const upcomingSurgeries = [
-    {
-      id: "S003",
-      patientName: "Mike Wilson",
-      procedure: "Hernia Repair",
-      surgeon: "Dr. Brown",
-      scheduledTime: "04:00 PM",
-      room: "OR 3",
-      status: "Scheduled"
-    }
-  ];
+    checkAuth();
 
-  const completedSurgeries = [
-    {
-      id: "S004",
-      patientName: "Alice Johnson",
-      procedure: "Gallbladder Surgery",
-      surgeon: "Dr. Smith",
-      duration: "85 minutes",
-      outcome: "Successful",
-      completedTime: "11:30 AM",
-      complications: "None"
-    }
-  ];
-
-  const handleStartSurgery = (surgeryId: string) => {
-    toast({
-      title: "Surgery started",
-      description: `Surgery ${surgeryId} has been marked as started.`,
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
     });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Surgery Tracking</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Surgery Tracking</h1>
+          <p className="text-muted-foreground">
+            Real-time surgical procedure monitoring and management
+          </p>
+        </div>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <Activity className="w-16 h-16 text-primary mx-auto" />
+              <h3 className="text-xl font-semibold">Authentication Required</h3>
+              <p className="text-muted-foreground">
+                Please sign in to access surgery tracking.
+              </p>
+              <Button onClick={() => window.location.href = '/auth'} className="bg-primary hover:bg-primary/90">
+                Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const liveSurgeries = procedures.filter(p => p.status === 'in_progress' && p.patients);
+  const upcomingSurgeries = procedures.filter(p => p.status === 'scheduled' && p.patients);
+  const completedSurgeries = procedures.filter(p => p.status === 'completed' && p.patients);
+
+  const handleStartSurgery = async (surgeryId: string) => {
+    try {
+      await updateProcedure(surgeryId, { 
+        status: 'in_progress',
+        actual_date: new Date().toISOString()
+      });
+      toast({
+        title: "Surgery started",
+        description: `Surgery ${surgeryId} has been marked as started.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start surgery",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCompleteSurgery = (surgeryId: string) => {
-    toast({
-      title: "Surgery completed",
-      description: `Surgery ${surgeryId} has been completed successfully.`,
-    });
+  const handleCompleteSurgery = async (surgeryId: string) => {
+    try {
+      await updateProcedure(surgeryId, { 
+        status: 'completed'
+      });
+      toast({
+        title: "Surgery completed",
+        description: `Surgery ${surgeryId} has been completed successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to complete surgery",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEmergencyAlert = (surgeryId: string) => {
@@ -143,7 +160,15 @@ export default function SurgeryTracking() {
 
         <TabsContent value="live" className="space-y-6">
           <div className="grid gap-6">
-            {liveSurgeries.map((surgery) => (
+            {liveSurgeries.length === 0 ? (
+              <Card className="bg-gradient-card shadow-card">
+                <CardContent className="p-8 text-center">
+                  <Activity className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No live surgeries in progress</p>
+                </CardContent>
+              </Card>
+            ) : (
+              liveSurgeries.map((surgery) => (
               <Card key={surgery.id} className="bg-gradient-card shadow-card border-l-4 border-l-primary">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -152,9 +177,9 @@ export default function SurgeryTracking() {
                         <Activity className="w-5 h-5 text-white animate-pulse" />
                       </div>
                       <div>
-                        <CardTitle className="text-xl">{surgery.procedure}</CardTitle>
+                        <CardTitle className="text-xl">{surgery.procedure_name}</CardTitle>
                         <CardDescription>
-                          {surgery.patientName} • {surgery.room} • Started: {surgery.startTime}
+                          {surgery.patients?.first_name} {surgery.patients?.last_name} • Started: {surgery.actual_date ? new Date(surgery.actual_date).toLocaleTimeString() : 'N/A'}
                         </CardDescription>
                       </div>
                     </div>
@@ -162,9 +187,6 @@ export default function SurgeryTracking() {
                       <Badge className="bg-success text-success-foreground">
                         LIVE
                       </Badge>
-                      <div className="text-sm text-muted-foreground">
-                        {surgery.currentDuration} / {surgery.estimatedDuration}
-                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -173,11 +195,11 @@ export default function SurgeryTracking() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <h3 className="font-semibold">Surgery Progress</h3>
-                      <span className="text-sm font-medium">{surgery.progress}% Complete</span>
+                      <span className="text-sm font-medium">In Progress</span>
                     </div>
-                    <Progress value={surgery.progress} className="h-3" />
+                    <Progress value={50} className="h-3" />
                     <div className="text-sm text-muted-foreground">
-                      Current Phase: <span className="font-medium text-foreground">{surgery.phase}</span>
+                      Current Phase: <span className="font-medium text-foreground">In Progress</span>
                     </div>
                   </div>
 
@@ -196,54 +218,45 @@ export default function SurgeryTracking() {
                           <Label className="text-sm font-medium text-muted-foreground">
                             Lead Surgeon
                           </Label>
-                          <p className="text-foreground">{surgery.surgeon}</p>
+                          <p className="text-foreground">{surgery.surgeon_name || 'TBD'}</p>
                         </div>
                         
                         <div>
                           <Label className="text-sm font-medium text-muted-foreground">
-                            Assistants
+                            Assistant Surgeon
                           </Label>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {surgery.assistants.map((assistant, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {assistant}
-                              </Badge>
-                            ))}
-                          </div>
+                          <p className="text-foreground">{surgery.assistant_surgeon || 'None assigned'}</p>
                         </div>
                         
                         <div>
                           <Label className="text-sm font-medium text-muted-foreground">
-                            Operating Room
+                            Anesthesia Type
                           </Label>
-                          <p className="text-foreground">{surgery.room}</p>
+                          <p className="text-foreground">{surgery.anesthesia_type || 'TBD'}</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Vital Signs */}
+                    {/* Patient Info */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Heart className="w-4 h-4 text-primary" />
-                        <h3 className="font-semibold">Patient Vitals</h3>
+                        <h3 className="font-semibold">Patient Information</h3>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-background p-3 rounded-lg border">
-                          <div className="text-xs text-muted-foreground">Heart Rate</div>
-                          <div className="text-lg font-bold text-foreground">{surgery.vitalSigns.heartRate}</div>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Duration
+                          </Label>
+                          <p className="text-foreground">{surgery.duration_minutes ? `${surgery.duration_minutes} min` : 'Ongoing'}</p>
                         </div>
-                        <div className="bg-background p-3 rounded-lg border">
-                          <div className="text-xs text-muted-foreground">Blood Pressure</div>
-                          <div className="text-lg font-bold text-foreground">{surgery.vitalSigns.bloodPressure}</div>
-                        </div>
-                        <div className="bg-background p-3 rounded-lg border">
-                          <div className="text-xs text-muted-foreground">Oxygen Sat</div>
-                          <div className="text-lg font-bold text-foreground">{surgery.vitalSigns.oxygenSat}</div>
-                        </div>
-                        <div className="bg-background p-3 rounded-lg border">
-                          <div className="text-xs text-muted-foreground">Temperature</div>
-                          <div className="text-lg font-bold text-foreground">{surgery.vitalSigns.temperature}</div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Status
+                          </Label>
+                          <p className="text-foreground capitalize">{surgery.status.replace('_', ' ')}</p>
                         </div>
                       </div>
                     </div>
@@ -289,7 +302,8 @@ export default function SurgeryTracking() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </TabsContent>
 
@@ -305,29 +319,35 @@ export default function SurgeryTracking() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {upcomingSurgeries.map((surgery) => (
-                <div key={surgery.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
-                  <div className="space-y-1">
-                    <div className="font-medium text-foreground">{surgery.procedure}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Patient: {surgery.patientName}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {surgery.scheduledTime} • {surgery.room} • {surgery.surgeon}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline">{surgery.status}</Badge>
-                    <Button 
-                      size="sm"
-                      onClick={() => handleStartSurgery(surgery.id)}
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      Start Surgery
-                    </Button>
-                  </div>
+              {upcomingSurgeries.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No upcoming surgeries scheduled
                 </div>
-              ))}
+              ) : (
+                upcomingSurgeries.map((surgery) => (
+                  <div key={surgery.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">{surgery.procedure_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Patient: {surgery.patients?.first_name} {surgery.patients?.last_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {surgery.scheduled_date ? new Date(surgery.scheduled_date).toLocaleString() : 'Time TBD'} • {surgery.surgeon_name || 'Surgeon TBD'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">{surgery.status}</Badge>
+                      <Button 
+                        size="sm"
+                        onClick={() => handleStartSurgery(surgery.id)}
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Start Surgery
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -344,28 +364,34 @@ export default function SurgeryTracking() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {completedSurgeries.map((surgery) => (
-                <div key={surgery.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
-                  <div className="space-y-1">
-                    <div className="font-medium text-foreground">{surgery.procedure}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Patient: {surgery.patientName} • Duration: {surgery.duration}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Completed: {surgery.completedTime} • {surgery.surgeon}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className="bg-success text-success-foreground">
-                      {surgery.outcome}
-                    </Badge>
-                    <Button size="sm" variant="outline">
-                      <FileText className="w-4 h-4 mr-2" />
-                      View Report
-                    </Button>
-                  </div>
+              {completedSurgeries.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No completed surgeries today
                 </div>
-              ))}
+              ) : (
+                completedSurgeries.map((surgery) => (
+                  <div key={surgery.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">{surgery.procedure_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Patient: {surgery.patients?.first_name} {surgery.patients?.last_name} • Duration: {surgery.duration_minutes ? `${surgery.duration_minutes} min` : 'N/A'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Completed: {surgery.actual_date ? new Date(surgery.actual_date).toLocaleString() : 'N/A'} • {surgery.surgeon_name || 'Unknown'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-success text-success-foreground">
+                        Completed
+                      </Badge>
+                      <Button size="sm" variant="outline">
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Report
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>

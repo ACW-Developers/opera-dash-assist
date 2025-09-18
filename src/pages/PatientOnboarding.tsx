@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,33 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { CalendarIcon, User, FileText, Heart, AlertTriangle, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePatients } from "@/hooks/usePatients";
+import PatientForm from "@/components/PatientForm";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function PatientOnboarding() {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [activeTab, setActiveTab] = useState("new");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { patients, addPatient } = usePatients();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,32 +49,44 @@ export default function PatientOnboarding() {
     });
   };
 
-  const recentPatients = [
-    {
-      id: "P001",
-      name: "John Doe",
-      age: 45,
-      condition: "Appendicitis",
-      status: "Pending Analysis",
-      registeredDate: "2024-01-15"
-    },
-    {
-      id: "P002", 
-      name: "Jane Smith",
-      age: 32,
-      condition: "Gallstones",
-      status: "Surgery Scheduled",
-      registeredDate: "2024-01-14"
-    },
-    {
-      id: "P003",
-      name: "Mike Wilson", 
-      age: 58,
-      condition: "Hernia",
-      status: "Consent Pending",
-      registeredDate: "2024-01-13"
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Patient Onboarding</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Patient Onboarding</h1>
+          <p className="text-muted-foreground">
+            Register new patients and manage existing patient information
+          </p>
+        </div>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <User className="w-16 h-16 text-primary mx-auto" />
+              <h3 className="text-xl font-semibold">Authentication Required</h3>
+              <p className="text-muted-foreground">
+                Please sign in to access patient onboarding.
+              </p>
+              <Button onClick={() => window.location.href = '/auth'} className="bg-primary hover:bg-primary/90">
+                Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -82,189 +116,7 @@ export default function PatientOnboarding() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <User className="w-4 h-4 text-primary" />
-                    <h3 className="text-lg font-semibold">Personal Information</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input id="firstName" placeholder="Enter first name" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input id="lastName" placeholder="Enter last name" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="patientId">Patient ID</Label>
-                      <Input id="patientId" placeholder="Auto-generated" disabled />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Date of Birth *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Gender *</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bloodType">Blood Type *</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select blood type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="a+">A+</SelectItem>
-                          <SelectItem value="a-">A-</SelectItem>
-                          <SelectItem value="b+">B+</SelectItem>
-                          <SelectItem value="b-">B-</SelectItem>
-                          <SelectItem value="ab+">AB+</SelectItem>
-                          <SelectItem value="ab-">AB-</SelectItem>
-                          <SelectItem value="o+">O+</SelectItem>
-                          <SelectItem value="o-">O-</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Contact Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input id="phone" type="tel" placeholder="Enter phone number" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" type="email" placeholder="Enter email address" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Address *</Label>
-                    <Textarea id="address" placeholder="Enter complete address" required />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Medical Information */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Heart className="w-4 h-4 text-primary" />
-                    <h3 className="text-lg font-semibold">Medical Information</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="primaryCondition">Primary Condition *</Label>
-                      <Input id="primaryCondition" placeholder="Enter primary medical condition" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="urgency">Urgency Level *</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select urgency level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="emergency">Emergency</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                          <SelectItem value="routine">Routine</SelectItem>
-                          <SelectItem value="elective">Elective</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="medicalHistory">Medical History</Label>
-                    <Textarea 
-                      id="medicalHistory" 
-                      placeholder="Previous surgeries, chronic conditions, medications..."
-                      className="h-24"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="allergies">Allergies & Reactions</Label>
-                    <Textarea 
-                      id="allergies" 
-                      placeholder="Drug allergies, food allergies, environmental allergies..."
-                      className="h-20"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Emergency Contact */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Emergency Contact</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyName">Contact Name *</Label>
-                      <Input id="emergencyName" placeholder="Emergency contact name" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyRelation">Relationship *</Label>
-                      <Input id="emergencyRelation" placeholder="Relationship to patient" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="emergencyPhone">Phone Number *</Label>
-                      <Input id="emergencyPhone" type="tel" placeholder="Emergency contact phone" required />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <Button type="submit" className="bg-gradient-medical text-white">
-                    Register Patient
-                  </Button>
-                  <Button type="button" variant="outline">
-                    Save as Draft
-                  </Button>
-                  <Button type="button" variant="ghost">
-                    Clear Form
-                  </Button>
-                </div>
-              </form>
+              <PatientForm onSubmit={addPatient} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -309,32 +161,36 @@ export default function PatientOnboarding() {
                 Recently registered patients awaiting assessment
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentPatients.map((patient) => (
+            <CardContent className="space-y-4">
+              {patients.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No patients registered yet
+                </div>
+              ) : (
+                patients.slice(0, 5).map((patient) => (
                   <div key={patient.id} className="flex items-center justify-between p-4 bg-background rounded-lg border">
                     <div className="space-y-1">
-                      <div className="font-medium text-foreground">{patient.name}</div>
+                      <div className="font-medium text-foreground">
+                        {patient.first_name} {patient.last_name}
+                      </div>
                       <div className="text-sm text-muted-foreground">
-                        Age: {patient.age} • Condition: {patient.condition}
+                        ID: {patient.patient_id} • DOB: {new Date(patient.date_of_birth).toLocaleDateString()}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Registered: {patient.registeredDate}
+                        Registered: {new Date(patient.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge 
-                        variant={patient.status === 'Surgery Scheduled' ? 'default' : 'secondary'}
-                      >
-                        {patient.status}
+                      <Badge variant="outline">
+                        Registered
                       </Badge>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => window.location.href = '/records'}>
                         View Details
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>

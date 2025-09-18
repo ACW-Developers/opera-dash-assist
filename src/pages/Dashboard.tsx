@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Users,
@@ -14,92 +15,137 @@ import {
   Stethoscope,
   FileText
 } from "lucide-react";
+import { usePatients } from "@/hooks/usePatients";
+import { useProcedures } from "@/hooks/useProcedures";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { patients } = usePatients();
+  const { procedures } = useProcedures();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const activeProcedures = procedures.filter(p => p.status === 'in_progress' || p.status === 'scheduled');
+  const completedProcedures = procedures.filter(p => p.status === 'completed');
+  const pendingConsents = procedures.filter(p => p.status === 'pending');
+  const successRate = procedures.length > 0 ? 
+    ((completedProcedures.length / procedures.length) * 100).toFixed(1) : '100';
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard Overview</h1>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard Overview</h1>
+          <p className="text-muted-foreground">
+            Surgery tracking system central hub
+          </p>
+        </div>
+
+        <Card className="bg-gradient-card shadow-card">
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <Heart className="w-16 h-16 text-primary mx-auto" />
+              <h3 className="text-xl font-semibold">Authentication Required</h3>
+              <p className="text-muted-foreground">
+                Please sign in to access the surgery tracking dashboard.
+              </p>
+              <Button onClick={() => window.location.href = '/auth'} className="bg-primary hover:bg-primary/90">
+                Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const stats = [
     {
       title: "Total Patients",
-      value: "1,247",
+      value: patients.length.toString(),
       change: "+12%",
       icon: Users,
       color: "text-primary"
     },
     {
-      title: "Surgeries This Month",
-      value: "89",
+      title: "Active Procedures",
+      value: activeProcedures.length.toString(),
       change: "+8%",
       icon: Activity,
       color: "text-success"
     },
     {
       title: "Pending Consents",
-      value: "23",
+      value: pendingConsents.length.toString(),
       change: "-5%",
       icon: FileText,
       color: "text-warning"
     },
     {
       title: "Success Rate",
-      value: "98.2%",
+      value: `${successRate}%`,
       change: "+0.5%",
       icon: CheckCircle,
       color: "text-success"
     }
   ];
 
-  const upcomingSurgeries = [
-    {
-      patient: "John Doe",
-      procedure: "Appendectomy",
-      time: "09:00 AM",
-      date: "Today",
-      surgeon: "Dr. Smith",
-      status: "Confirmed"
-    },
-    {
-      patient: "Jane Smith",
-      procedure: "Gallbladder Surgery",
-      time: "02:30 PM",
-      date: "Today",
-      surgeon: "Dr. Johnson",
-      status: "Pre-op"
-    },
-    {
-      patient: "Mike Wilson",
-      procedure: "Hernia Repair",
-      time: "10:00 AM",
-      date: "Tomorrow",
-      surgeon: "Dr. Brown",
-      status: "Scheduled"
-    }
-  ];
+  const upcomingSurgeries = procedures
+    .filter(p => p.status === 'scheduled' && p.patients)
+    .slice(0, 3)
+    .map(p => ({
+      patient: `${p.patients?.first_name} ${p.patients?.last_name}`,
+      procedure: p.procedure_name,
+      time: p.scheduled_date ? new Date(p.scheduled_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'TBD',
+      date: p.scheduled_date ? new Date(p.scheduled_date).toDateString() : 'TBD',
+      surgeon: p.surgeon_name || 'TBD',
+      status: 'Scheduled'
+    }));
 
-  const recentActivity = [
-    {
-      action: "Surgery completed",
-      patient: "Alice Johnson",
-      time: "2 hours ago",
-      status: "success"
-    },
-    {
-      action: "Consent approved",
-      patient: "Robert Davis",
-      time: "4 hours ago",
-      status: "info"
-    },
-    {
-      action: "Post-op follow-up scheduled",
-      patient: "Sarah Wilson",
-      time: "6 hours ago",
-      status: "info"
-    },
-    {
-      action: "Emergency surgery requested",
-      patient: "Mark Thompson",
-      time: "8 hours ago",
-      status: "warning"
-    }
-  ];
+  const recentActivity = procedures
+    .filter(p => p.patients)
+    .slice(0, 4)
+    .map(p => {
+      const statusMap = {
+        'completed': 'Surgery completed',
+        'scheduled': 'Surgery scheduled', 
+        'in_progress': 'Surgery in progress',
+        'pending': 'Assessment pending'
+      };
+      
+      return {
+        action: statusMap[p.status as keyof typeof statusMap] || 'Status updated',
+        patient: `${p.patients?.first_name} ${p.patients?.last_name}`,
+        time: new Date(p.updated_at).toLocaleString(),
+        status: p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warning' : 'info'
+      };
+    });
 
   return (
     <div className="space-y-6">
