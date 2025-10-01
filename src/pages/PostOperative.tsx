@@ -51,26 +51,6 @@ export default function PostOperative() {
       incisionStatus: "Healing well, no signs of infection",
       lastContact: "2024-01-20"
     },
-    {
-      id: "P002",
-      name: "Alice Johnson", 
-      procedure: "Cholecystectomy",
-      surgeryDate: "2024-01-10",
-      daysSinceSurgery: 10,
-      nextAppointment: "2024-01-24",
-      status: "Needs Assessment",
-      painLevel: 6,
-      mobilityStatus: "Limited movement",
-      complications: "Mild nausea",
-      medications: ["Pain medication", "Anti-nausea"],
-      vitalSigns: {
-        temperature: "99.2°F", 
-        bloodPressure: "135/85",
-        heartRate: "85 bpm"
-      },
-      incisionStatus: "Slight redness, monitoring required",
-      lastContact: "2024-01-18"
-    }
   ];
 
   const upcomingAppointments = [

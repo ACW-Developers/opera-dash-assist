@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,408 +7,606 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Stethoscope, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  User, 
   FileText, 
-  AlertTriangle,
   CheckCircle,
   Eye,
-  Edit
+  Pill,
+  User,
+  TestTube,
+  Scan,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePatients } from "@/hooks/usePatients"; 
-import { useProcedures } from "@/hooks/useProcedures";
-import PatientForm from "@/components/PatientForm";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export default function DoctorAnalysis() {
-  const [selectedDate, setSelectedDate] = useState<Date>();
-  const [activeTab, setActiveTab] = useState("pending");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("examination");
+  const [selectedPatient, setSelectedPatient] = useState("");
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [customSymptom, setCustomSymptom] = useState("");
+  const [recommendedTests, setRecommendedTests] = useState<string[]>([]);
+  const [testResults, setTestResults] = useState("");
+  const [diagnosis, setDiagnosis] = useState("");
+  const [treatmentType, setTreatmentType] = useState<"prescription" | "surgery" | "">("");
+  const [prescription, setPrescription] = useState("");
+  const [surgeryType, setSurgeryType] = useState("");
   const { toast } = useToast();
-  const { patients } = usePatients();
-  const { procedures, addProcedure } = useProcedures();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-      setLoading(false);
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const pendingPatients = [
-    {
-      id: "P001",
-      name: "John Doe",
-      age: 45,
-      condition: "Acute Appendicitis",
-      priority: "High",
-      registeredDate: "2024-01-15",
-      symptoms: "Severe abdominal pain, fever, nausea",
-      vitalSigns: "BP: 140/90, HR: 95, Temp: 101.2°F"
-    },
-    {
-      id: "P002",
-      name: "Jane Smith", 
-      age: 32,
-      condition: "Cholecystitis",
-      priority: "Medium",
-      registeredDate: "2024-01-14",
-      symptoms: "Right upper quadrant pain, bloating",
-      vitalSigns: "BP: 120/80, HR: 78, Temp: 99.5°F"
-    },
-    {
-      id: "P003",
-      name: "Mike Wilson",
-      age: 58,
-      condition: "Inguinal Hernia",
-      priority: "Low",
-      registeredDate: "2024-01-13",
-      symptoms: "Bulge in groin area, mild discomfort",
-      vitalSigns: "BP: 130/85, HR: 72, Temp: 98.6°F"
-    }
+  // Sample patients data
+  const patients = [
+    { id: "P001", name: "John Doe", age: 45, gender: "Male" },
+    { id: "P002", name: "Jane Smith", age: 32, gender: "Female" },
   ];
 
-  const handleAnalysisSubmit = (patientId: string) => {
-    toast({
-      title: "Analysis completed",
-      description: `Medical assessment for patient ${patientId} has been saved.`,
-    });
+  const commonSymptoms = [
+    "Fever", "Headache", "Nausea", "Vomiting", "Abdominal pain", "Chest pain",
+    "Shortness of breath", "Fatigue", "Dizziness", "Cough", "Back pain", "Joint pain"
+  ];
+
+  const testTypes = [
+    { id: "lab", name: "Laboratory Tests", icon: TestTube },
+    { id: "ct", name: "CT Scan", icon: Scan },
+    { id: "xray", name: "X-Ray", icon: X },
+    { id: "mri", name: "MRI", icon: Scan },
+    { id: "ultrasound", name: "Ultrasound", icon: Scan }
+  ];
+
+  const selectedPatientData = patients.find(p => p.id === selectedPatient);
+
+  const handleSymptomToggle = (symptom: string) => {
+    if (symptoms.includes(symptom)) {
+      setSymptoms(symptoms.filter(s => s !== symptom));
+    } else {
+      setSymptoms([...symptoms, symptom]);
+    }
   };
 
-  const handleScheduleSurgery = (patientId: string) => {
+  const handleAddCustomSymptom = () => {
+    if (customSymptom.trim() && !symptoms.includes(customSymptom)) {
+      setSymptoms([...symptoms, customSymptom]);
+      setCustomSymptom("");
+    }
+  };
+
+  const handleTestToggle = (testId: string) => {
+    if (recommendedTests.includes(testId)) {
+      setRecommendedTests(recommendedTests.filter(t => t !== testId));
+    } else {
+      setRecommendedTests([...recommendedTests, testId]);
+    }
+  };
+
+  const handleOrderTests = () => {
+    if (!selectedPatient) {
+      toast({
+        title: "Patient required",
+        description: "Please select a patient first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (symptoms.length === 0) {
+      toast({
+        title: "Symptoms required",
+        description: "Please select at least one symptom",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (recommendedTests.length === 0) {
+      toast({
+        title: "Tests required",
+        description: "Please select at least one test type",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
-      title: "Surgery scheduled",
-      description: `Surgery has been scheduled for patient ${patientId}.`,
+      title: "Tests ordered",
+      description: `Tests have been ordered for ${selectedPatientData?.name}. Awaiting results.`,
     });
+
+    // Simulate test results based on symptoms
+    const testFindings = generateTestResults(symptoms, recommendedTests);
+    setTestResults(testFindings);
+    
+    setActiveTab("results");
+  };
+
+  const generateTestResults = (symptoms: string[], tests: string[]) => {
+    let findings = "";
+    
+    if (symptoms.includes("Abdominal pain") && symptoms.includes("Fever") && symptoms.includes("Nausea")) {
+      findings = "CT Scan Findings: Appendiceal wall thickening with surrounding inflammatory changes and fat stranding. Findings consistent with acute appendicitis.\n";
+      findings += "Lab Results: WBC 14.2 K/μL (elevated), CRP 28 mg/L (elevated)\n";
+      setDiagnosis("Acute Appendicitis");
+    } else if (symptoms.includes("Chest pain") && symptoms.includes("Shortness of breath")) {
+      findings = "X-Ray Findings: Clear lung fields, normal cardiac silhouette.\n";
+      findings += "Lab Results: Troponin within normal limits, ECG normal sinus rhythm.\n";
+      setDiagnosis("Musculoskeletal Chest Pain");
+    } else if (symptoms.includes("Headache") && symptoms.includes("Dizziness")) {
+      findings = "MRI Findings: No acute intracranial abnormalities.\n";
+      findings += "Lab Results: Blood pressure 150/95 mmHg, otherwise normal.\n";
+      setDiagnosis("Hypertension with Headache");
+    } else {
+      findings = "All tests within normal limits. No acute abnormalities detected.\n";
+      setDiagnosis("Malaria - Follow up as needed");
+    }
+
+    return findings;
+  };
+
+  const handleSubmitAnalysis = () => {
+    if (!diagnosis || !treatmentType) {
+      toast({
+        title: "Incomplete analysis",
+        description: "Please provide diagnosis and select treatment type",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (treatmentType === "prescription" && !prescription) {
+      toast({
+        title: "Prescription required",
+        description: "Please write a prescription for medication",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (treatmentType === "surgery" && !surgeryType) {
+      toast({
+        title: "Surgery type required",
+        description: "Please select the type of surgery",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Analysis completed",
+      description: `Medical assessment for ${selectedPatientData?.name} has been saved.`,
+    });
+
+    // Navigate based on treatment type
+    if (treatmentType === "prescription") {
+      navigate("/pharmacy");
+    } else if (treatmentType === "surgery") {
+      navigate("/consent");
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-foreground">Doctor Analysis & Scheduling</h1>
+        <h1 className="text-3xl font-bold text-foreground">Doctor Analysis & Treatment Plan</h1>
         <p className="text-muted-foreground">
-          Medical assessment, diagnosis, and surgery scheduling
+          Patient examination, test ordering, diagnosis, and treatment planning
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending">
-            Pending Analysis ({pendingPatients.length})
-          </TabsTrigger>
-          <TabsTrigger value="schedule">Surgery Scheduling</TabsTrigger>
-          <TabsTrigger value="completed">Completed Assessments</TabsTrigger>
+          <TabsTrigger value="examination">Patient Examination</TabsTrigger>
+          <TabsTrigger value="results">Test Results Review</TabsTrigger>
+          <TabsTrigger value="treatment">Treatment Plan</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-6">
-          <div className="grid gap-6">
-            {pendingPatients.map((patient) => (
-              <Card key={patient.id} className="bg-gradient-card shadow-card">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-medical rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">{patient.name}</CardTitle>
-                        <CardDescription>
-                          Age: {patient.age} • Patient ID: {patient.id}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={patient.priority === 'High' ? 'destructive' : 
-                              patient.priority === 'Medium' ? 'default' : 'secondary'}
-                    >
-                      {patient.priority} Priority
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Patient Information */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Stethoscope className="w-4 h-4 text-primary" />
-                        <h3 className="font-semibold">Medical Information</h3>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
-                            Primary Condition
-                          </Label>
-                          <p className="text-foreground">{patient.condition}</p>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
-                            Symptoms
-                          </Label>
-                          <p className="text-foreground">{patient.symptoms}</p>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
-                            Vital Signs
-                          </Label>
-                          <p className="text-foreground">{patient.vitalSigns}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Analysis Form */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FileText className="w-4 h-4 text-primary" />
-                        <h3 className="font-semibold">Medical Analysis</h3>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`diagnosis-${patient.id}`}>Diagnosis *</Label>
-                          <Input 
-                            id={`diagnosis-${patient.id}`}
-                            placeholder="Enter primary diagnosis"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`surgery-type-${patient.id}`}>Recommended Surgery</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select surgery type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="appendectomy">Appendectomy</SelectItem>
-                              <SelectItem value="cholecystectomy">Cholecystectomy</SelectItem>
-                              <SelectItem value="hernia-repair">Hernia Repair</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`urgency-${patient.id}`}>Surgery Urgency</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select urgency level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="emergency">Emergency (0-6 hours)</SelectItem>
-                              <SelectItem value="urgent">Urgent (24-48 hours)</SelectItem>
-                              <SelectItem value="routine">Routine (1-2 weeks)</SelectItem>
-                              <SelectItem value="elective">Elective (1+ months)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`notes-${patient.id}`}>Clinical Notes</Label>
-                          <Textarea 
-                            id={`notes-${patient.id}`}
-                            placeholder="Additional observations, recommendations..."
-                            className="h-20"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button 
-                      className="bg-gradient-medical text-white"
-                      onClick={() => handleAnalysisSubmit(patient.id)}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Complete Analysis
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => handleScheduleSurgery(patient.id)}
-                    >
-                      <CalendarIcon className="w-4 h-4 mr-2" />
-                      Schedule Surgery
-                    </Button>
-                    <Button variant="ghost">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View History
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-6">
+        <TabsContent value="examination" className="space-y-6">
           <Card className="bg-gradient-card shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-primary" />
-                Surgery Scheduling
-              </CardTitle>
-              <CardDescription>
-                Schedule surgical procedures for analyzed patients
-              </CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-medical rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Patient Selection & Symptoms</CardTitle>
+                  <CardDescription>
+                    Select patient and document presenting symptoms
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Patient</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select patient for surgery" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="P001">John Doe - Appendectomy</SelectItem>
-                        <SelectItem value="P002">Jane Smith - Cholecystectomy</SelectItem>
-                        <SelectItem value="P003">Mike Wilson - Hernia Repair</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Surgeon</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Assign surgeon" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="dr-smith">Dr. Smith</SelectItem>
-                        <SelectItem value="dr-johnson">Dr. Johnson</SelectItem>
-                        <SelectItem value="dr-brown">Dr. Brown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Operating Room</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select OR" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="or1">OR 1 - General Surgery</SelectItem>
-                        <SelectItem value="or2">OR 2 - Minimally Invasive</SelectItem>
-                        <SelectItem value="or3">OR 3 - Emergency</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Patient Selection */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patient-select">Select Patient *</Label>
+                  <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {patients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            {patient.name} (Age: {patient.age}, {patient.gender})
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Surgery Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP") : "Select date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                {selectedPatient && (
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-4 h-4 text-blue-600" />
+                      <span className="font-semibold text-blue-900">
+                        Selected: {selectedPatientData?.name}
+                      </span>
+                    </div>
+                    <div className="text-sm text-blue-700">
+                      Age: {selectedPatientData?.age} • Gender: {selectedPatientData?.gender} • ID: {selectedPatientData?.id}
+                    </div>
                   </div>
+                )}
+              </div>
 
-                  <div className="space-y-2">
-                    <Label>Start Time</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="08:00">08:00 AM</SelectItem>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="12:00">12:00 PM</SelectItem>
-                        <SelectItem value="14:00">02:00 PM</SelectItem>
-                        <SelectItem value="16:00">04:00 PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Estimated Duration</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 minutes</SelectItem>
-                        <SelectItem value="60">1 hour</SelectItem>
-                        <SelectItem value="90">1.5 hours</SelectItem>
-                        <SelectItem value="120">2 hours</SelectItem>
-                        <SelectItem value="180">3 hours</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Symptoms Selection */}
+              <div className="space-y-4">
+                <Label>Symptoms Presentation *</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {commonSymptoms.map((symptom) => (
+                    <div key={symptom} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`symptom-${symptom}`}
+                        checked={symptoms.includes(symptom)}
+                        onCheckedChange={() => handleSymptomToggle(symptom)}
+                      />
+                      <Label htmlFor={`symptom-${symptom}`} className="text-sm cursor-pointer">
+                        {symptom}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
+
+                {/* Custom Symptom Input */}
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Add custom symptom..."
+                    value={customSymptom}
+                    onChange={(e) => setCustomSymptom(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleAddCustomSymptom} variant="outline">
+                    Add
+                  </Button>
+                </div>
+
+                {symptoms.length > 0 && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="text-sm font-medium mb-2">Selected Symptoms:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {symptoms.map((symptom) => (
+                        <Badge key={symptom} variant="secondary" className="cursor-pointer" onClick={() => handleSymptomToggle(symptom)}>
+                          {symptom} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Special Instructions</Label>
-                <Textarea 
-                  placeholder="Any special requirements or instructions for the surgery..."
-                  className="h-20"
-                />
+              {/* Test Recommendations */}
+              <div className="space-y-4">
+                <Label>Recommended Tests *</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {testTypes.map((test) => {
+                    const IconComponent = test.icon;
+                    return (
+                      <Card 
+                        key={test.id}
+                        className={`cursor-pointer transition-all ${
+                          recommendedTests.includes(test.id) 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border'
+                        }`}
+                        onClick={() => handleTestToggle(test.id)}
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <Checkbox 
+                            checked={recommendedTests.includes(test.id)}
+                            onCheckedChange={() => handleTestToggle(test.id)}
+                          />
+                          <IconComponent className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-sm font-medium">{test.name}</span>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {recommendedTests.length > 0 && (
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="text-sm font-medium text-green-900 mb-2">Tests to be ordered:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {recommendedTests.map(testId => {
+                        const test = testTypes.find(t => t.id === testId);
+                        return (
+                          <Badge key={testId} variant="default" className="bg-green-100 text-green-800">
+                            {test?.name}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex gap-3">
-                <Button className="bg-gradient-medical text-white">
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  Schedule Surgery
-                </Button>
-                <Button variant="outline">
-                  Check Availability
-                </Button>
-              </div>
+              <Button 
+                className="w-full bg-gradient-medical text-white"
+                onClick={handleOrderTests}
+                disabled={!selectedPatient || symptoms.length === 0 || recommendedTests.length === 0}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Order Tests & Await Results
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="completed" className="space-y-6">
+        <TabsContent value="results" className="space-y-6">
+          <Card className="bg-gradient-card shadow-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-medical rounded-full flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">
+                      {selectedPatientData?.name} - Test Results
+                    </CardTitle>
+                    <CardDescription>
+                      Review test findings and provide diagnosis
+                    </CardDescription>
+                  </div>
+                </div>
+                <Badge variant="destructive">
+                  Results Ready
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Patient Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <User className="w-4 h-4 text-primary" />
+                    <h3 className="font-semibold">Patient Information</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Symptoms Reported
+                      </Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {symptoms.map((symptom) => (
+                          <Badge key={symptom} variant="secondary" className="text-xs">
+                            {symptom}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Tests Performed
+                      </Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {recommendedTests.map(testId => {
+                          const test = testTypes.find(t => t.id === testId);
+                          return (
+                            <Badge key={testId} variant="outline" className="text-xs">
+                              {test?.name}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Test Results */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <h3 className="font-semibold">Test Findings</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="test-results">Results Summary</Label>
+                      <Textarea 
+                        id="test-results"
+                        value={testResults}
+                        readOnly
+                        className="h-32 bg-muted/50 font-mono text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="doctor-diagnosis">Preliminary Diagnosis</Label>
+                      <Input 
+                        id="doctor-diagnosis"
+                        placeholder="Enter diagnosis based on test results..."
+                        value={diagnosis}
+                        onChange={(e) => setDiagnosis(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-gradient-medical text-white"
+                onClick={() => setActiveTab("treatment")}
+                disabled={!diagnosis}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Proceed to Treatment Plan
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="treatment" className="space-y-6">
           <Card className="bg-gradient-card shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-success" />
-                Completed Assessments
+                <Stethoscope className="w-5 h-5 text-primary" />
+                Treatment Plan & Recommendations
               </CardTitle>
               <CardDescription>
-                Recently completed medical analyses and scheduled surgeries
+                Final diagnosis and treatment recommendations for {selectedPatientData?.name}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center text-muted-foreground py-8">
-                No completed assessments to display
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Treatment Section */}
+                <div className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="final-diagnosis">Final Diagnosis *</Label>
+                      <Input 
+                        id="final-diagnosis"
+                        value={diagnosis}
+                        onChange={(e) => setDiagnosis(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="treatment-type">Recommended Treatment *</Label>
+                      <Select value={treatmentType} onValueChange={(value: "prescription" | "surgery") => setTreatmentType(value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select treatment type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="prescription">
+                            <div className="flex items-center gap-2">
+                              <Pill className="w-4 h-4" />
+                              Medication & Prescription
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="surgery">
+                            <div className="flex items-center gap-2">
+                              <Pill className="w-4 h-4" />
+                              Surgical Intervention
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Conditionally render based on treatment type */}
+                    {treatmentType === "prescription" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="prescription">Prescription Details *</Label>
+                        <Textarea 
+                          id="prescription"
+                          placeholder="Prescribe medications, dosage, frequency, and duration..."
+                          className="h-32"
+                          value={prescription}
+                          onChange={(e) => setPrescription(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    {treatmentType === "surgery" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="surgery-type">Recommended Surgery *</Label>
+                        <Select value={surgeryType} onValueChange={setSurgeryType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select surgery type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="appendectomy">Appendectomy</SelectItem>
+                            <SelectItem value="cholecystectomy">Cholecystectomy</SelectItem>
+                            <SelectItem value="hernia-repair">Hernia Repair</SelectItem>
+                            <SelectItem value="biopsy">Biopsy</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Patient Summary */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <User className="w-4 h-4 text-primary" />
+                    <h3 className="font-semibold">Case Summary</h3>
+                  </div>
+                  
+                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Patient:</span>
+                      <span className="font-medium">{selectedPatientData?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Age:</span>
+                      <span className="font-medium">{selectedPatientData?.age}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Presenting Symptoms:</span>
+                      <span className="font-medium text-right">{symptoms.join(", ")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tests Completed:</span>
+                      <span className="font-medium">
+                        {recommendedTests.map(id => testTypes.find(t => t.id === id)?.name).join(", ")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Next Steps Information */}
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">Next Steps:</h4>
+                    {treatmentType === "prescription" && (
+                      <p className="text-blue-800 text-sm">
+                        After submitting, patient will be directed to pharmacy to collect prescribed medications.
+                      </p>
+                    )}
+                    {treatmentType === "surgery" && (
+                      <p className="text-blue-800 text-sm">
+                        After submitting, patient will be directed to consent form for surgical procedure.
+                      </p>
+                    )}
+                    {!treatmentType && (
+                      <p className="text-blue-800 text-sm">
+                        Select treatment type to see next steps for the patient.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <Button 
+                  className="bg-gradient-medical text-white flex-1"
+                  onClick={handleSubmitAnalysis}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Complete Analysis & Proceed
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setActiveTab("results")}
+                >
+                  Back to Test Results
+                </Button>
               </div>
             </CardContent>
           </Card>

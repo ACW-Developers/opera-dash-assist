@@ -11,6 +11,7 @@ import PatientOnboarding from "./pages/PatientOnboarding";
 import VitalDataCollection from "./pages/VitalDataCollection";
 import AppointmentBooking from "./pages/AppointmentBooking";
 import DoctorAnalysis from "./pages/DoctorAnalysis";
+import Prescriptions from "./pages/Pharmacy";
 import ConsentManagement from "./pages/ConsentManagement";
 import PreOperative from "./pages/PreOperative";
 import SurgeryTracking from "./pages/SurgeryTracking";
@@ -54,6 +55,7 @@ const App = () => {
           <Route path="/vitals" element={<DashboardLayout title="Vital Data Collection" subtitle="Cardiac vital signs monitoring"><VitalDataCollection /></DashboardLayout>} />
           <Route path="/appointments" element={<DashboardLayout title="Appointment Booking" subtitle="Schedule cardiac consultations"><AppointmentBooking /></DashboardLayout>} />
           <Route path="/analysis" element={<DashboardLayout title="Doctor Analysis" subtitle="Medical assessment and surgery scheduling"><DoctorAnalysis /></DashboardLayout>} />
+          <Route path="/Pharmacy" element={<DashboardLayout title="Prescriptions" subtitle="Medication management"><Prescriptions /></DashboardLayout>} />
           <Route path="/consent" element={<DashboardLayout title="Consent Management" subtitle="Automated surgical consent process"><ConsentManagement /></DashboardLayout>} />
           <Route path="/preoperative" element={<DashboardLayout title="Pre-operative Procedures" subtitle="WHO surgical safety checklist"><PreOperative /></DashboardLayout>} />
           <Route path="/surgery" element={<DashboardLayout title="Surgery Tracking" subtitle="Live surgical procedure monitoring"><SurgeryTracking /></DashboardLayout>} />

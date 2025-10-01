@@ -61,6 +61,12 @@ const navigationItems = [
     description: "Medical assessment & scheduling"
   },
   {
+    title: "Pharmacy",
+    url: "/Pharmacy",
+    icon: FileText,
+    description: "Medication management"
+  },
+  {
     title: "Consent Management",
     url: "/consent",
     icon: FileCheck,

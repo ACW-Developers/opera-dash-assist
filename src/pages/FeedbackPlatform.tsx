@@ -39,32 +39,6 @@ export default function FeedbackPlatform() {
       status: "New",
       priority: "Low"
     },
-    {
-      id: "F002",
-      patientName: "Alice Johnson",
-      patientId: "P002", 
-      procedure: "Cholecystectomy",
-      surgeonName: "Dr. Johnson",
-      submittedDate: "2024-01-19",
-      rating: 3,
-      category: "Pain Management",
-      feedback: "The surgery went well but I experienced more pain than expected during recovery. Would appreciate better pain management options for future patients.",
-      status: "Requires Response",
-      priority: "Medium"
-    },
-    {
-      id: "F003",
-      patientName: "Sarah Williams",
-      patientId: "P003",
-      procedure: "Hernia Repair",
-      surgeonName: "Dr. Brown",
-      submittedDate: "2024-01-18",
-      rating: 2,
-      category: "Communication",
-      feedback: "While the surgery was successful, I felt there was a lack of communication about post-operative care instructions. This caused confusion during my recovery.",
-      status: "Urgent",
-      priority: "High"
-    }
   ];
 
   const specialistResponses = [
