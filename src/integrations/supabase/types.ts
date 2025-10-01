@@ -14,6 +14,181 @@ export type Database = {
   }
   public: {
     Tables: {
+      consent_records: {
+        Row: {
+          alternatives_explained: boolean
+          consent_date: string | null
+          consent_given: boolean
+          created_at: string
+          id: string
+          notes: string | null
+          patient_id: string
+          patient_questions_answered: boolean
+          patient_signature: string | null
+          procedure_explained: boolean
+          procedure_id: string | null
+          risks_explained: boolean
+          updated_at: string
+          user_id: string
+          witness_name: string | null
+          witness_signature: string | null
+        }
+        Insert: {
+          alternatives_explained?: boolean
+          consent_date?: string | null
+          consent_given?: boolean
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          patient_questions_answered?: boolean
+          patient_signature?: string | null
+          procedure_explained?: boolean
+          procedure_id?: string | null
+          risks_explained?: boolean
+          updated_at?: string
+          user_id: string
+          witness_name?: string | null
+          witness_signature?: string | null
+        }
+        Update: {
+          alternatives_explained?: boolean
+          consent_date?: string | null
+          consent_given?: boolean
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          patient_questions_answered?: boolean
+          patient_signature?: string | null
+          procedure_explained?: boolean
+          procedure_id?: string | null
+          risks_explained?: boolean
+          updated_at?: string
+          user_id?: string
+          witness_name?: string | null
+          witness_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_records_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnoses: {
+        Row: {
+          created_at: string
+          diagnosis: string
+          id: string
+          notes: string | null
+          patient_id: string
+          recommendation_type: string
+          symptoms: string | null
+          test_results: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagnosis: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          recommendation_type: string
+          symptoms?: string | null
+          test_results?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagnosis?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          recommendation_type?: string
+          symptoms?: string | null
+          test_results?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnoses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_tests: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          ordered_by: string
+          ordered_date: string
+          patient_id: string
+          results: string | null
+          results_date: string | null
+          status: string
+          test_name: string
+          test_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ordered_by: string
+          ordered_date?: string
+          patient_id: string
+          results?: string | null
+          results_date?: string | null
+          status?: string
+          test_name: string
+          test_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ordered_by?: string
+          ordered_date?: string
+          patient_id?: string
+          results?: string | null
+          results_date?: string | null
+          status?: string
+          test_name?: string
+          test_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_tests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
@@ -74,6 +249,258 @@ export type Database = {
         }
         Relationships: []
       }
+      postoperative_records: {
+        Row: {
+          activity_restrictions: string | null
+          bleeding_controlled: boolean
+          created_at: string
+          diet_instructions: string | null
+          discharge_date: string | null
+          discharge_instructions: string | null
+          drainage_amount: string | null
+          follow_up_date: string | null
+          follow_up_scheduled: boolean
+          id: string
+          medications_prescribed: string | null
+          nausea_present: boolean
+          notes: string | null
+          pain_level: number | null
+          patient_id: string
+          procedure_id: string
+          recovery_room_time: string | null
+          updated_at: string
+          user_id: string
+          vital_signs_stable: boolean
+          warning_signs: string | null
+          wound_condition: string | null
+        }
+        Insert: {
+          activity_restrictions?: string | null
+          bleeding_controlled?: boolean
+          created_at?: string
+          diet_instructions?: string | null
+          discharge_date?: string | null
+          discharge_instructions?: string | null
+          drainage_amount?: string | null
+          follow_up_date?: string | null
+          follow_up_scheduled?: boolean
+          id?: string
+          medications_prescribed?: string | null
+          nausea_present?: boolean
+          notes?: string | null
+          pain_level?: number | null
+          patient_id: string
+          procedure_id: string
+          recovery_room_time?: string | null
+          updated_at?: string
+          user_id: string
+          vital_signs_stable?: boolean
+          warning_signs?: string | null
+          wound_condition?: string | null
+        }
+        Update: {
+          activity_restrictions?: string | null
+          bleeding_controlled?: boolean
+          created_at?: string
+          diet_instructions?: string | null
+          discharge_date?: string | null
+          discharge_instructions?: string | null
+          drainage_amount?: string | null
+          follow_up_date?: string | null
+          follow_up_scheduled?: boolean
+          id?: string
+          medications_prescribed?: string | null
+          nausea_present?: boolean
+          notes?: string | null
+          pain_level?: number | null
+          patient_id?: string
+          procedure_id?: string
+          recovery_room_time?: string | null
+          updated_at?: string
+          user_id?: string
+          vital_signs_stable?: boolean
+          warning_signs?: string | null
+          wound_condition?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postoperative_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postoperative_records_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preoperative_checklists: {
+        Row: {
+          anesthesia_confirmed: boolean
+          anesthesia_safety_check: boolean
+          antibiotics_given: boolean
+          aspiration_risk: boolean
+          blood_loss_risk: boolean
+          completed_by: string | null
+          completed_date: string | null
+          created_at: string
+          difficult_airway: boolean
+          equipment_concerns: boolean
+          id: string
+          imaging_displayed: boolean
+          known_allergies: boolean
+          notes: string | null
+          nursing_confirmed: boolean
+          patient_confirmed: boolean
+          patient_id: string
+          procedure_id: string
+          pulse_oximeter: boolean
+          site_marked: boolean
+          surgeon_confirmed: boolean
+          team_introductions: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anesthesia_confirmed?: boolean
+          anesthesia_safety_check?: boolean
+          antibiotics_given?: boolean
+          aspiration_risk?: boolean
+          blood_loss_risk?: boolean
+          completed_by?: string | null
+          completed_date?: string | null
+          created_at?: string
+          difficult_airway?: boolean
+          equipment_concerns?: boolean
+          id?: string
+          imaging_displayed?: boolean
+          known_allergies?: boolean
+          notes?: string | null
+          nursing_confirmed?: boolean
+          patient_confirmed?: boolean
+          patient_id: string
+          procedure_id: string
+          pulse_oximeter?: boolean
+          site_marked?: boolean
+          surgeon_confirmed?: boolean
+          team_introductions?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anesthesia_confirmed?: boolean
+          anesthesia_safety_check?: boolean
+          antibiotics_given?: boolean
+          aspiration_risk?: boolean
+          blood_loss_risk?: boolean
+          completed_by?: string | null
+          completed_date?: string | null
+          created_at?: string
+          difficult_airway?: boolean
+          equipment_concerns?: boolean
+          id?: string
+          imaging_displayed?: boolean
+          known_allergies?: boolean
+          notes?: string | null
+          nursing_confirmed?: boolean
+          patient_confirmed?: boolean
+          patient_id?: string
+          procedure_id?: string
+          pulse_oximeter?: boolean
+          site_marked?: boolean
+          surgeon_confirmed?: boolean
+          team_introductions?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preoperative_checklists_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preoperative_checklists_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "surgical_procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          created_at: string
+          diagnosis_id: string | null
+          dispensed_by: string | null
+          dispensed_date: string | null
+          dosage: string
+          duration: string
+          frequency: string
+          id: string
+          instructions: string | null
+          medication_name: string
+          patient_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagnosis_id?: string | null
+          dispensed_by?: string | null
+          dispensed_date?: string | null
+          dosage: string
+          duration: string
+          frequency: string
+          id?: string
+          instructions?: string | null
+          medication_name: string
+          patient_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagnosis_id?: string | null
+          dispensed_by?: string | null
+          dispensed_date?: string | null
+          dosage?: string
+          duration?: string
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          medication_name?: string
+          patient_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_diagnosis_id_fkey"
+            columns: ["diagnosis_id"]
+            isOneToOne: false
+            referencedRelation: "diagnoses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedure_outcomes: {
         Row: {
           created_at: string
@@ -128,6 +555,7 @@ export type Database = {
           assistant_surgeon: string | null
           complications: string | null
           created_at: string
+          diagnosis_id: string | null
           duration_minutes: number | null
           id: string
           operative_notes: string | null
@@ -148,6 +576,7 @@ export type Database = {
           assistant_surgeon?: string | null
           complications?: string | null
           created_at?: string
+          diagnosis_id?: string | null
           duration_minutes?: number | null
           id?: string
           operative_notes?: string | null
@@ -168,6 +597,7 @@ export type Database = {
           assistant_surgeon?: string | null
           complications?: string | null
           created_at?: string
+          diagnosis_id?: string | null
           duration_minutes?: number | null
           id?: string
           operative_notes?: string | null
@@ -183,6 +613,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "surgical_procedures_diagnosis_id_fkey"
+            columns: ["diagnosis_id"]
+            isOneToOne: false
+            referencedRelation: "diagnoses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "surgical_procedures_patient_id_fkey"
             columns: ["patient_id"]
