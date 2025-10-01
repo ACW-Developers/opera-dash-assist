@@ -43,6 +43,18 @@ const navigationItems = [
     description: "Register new patients"
   },
   {
+    title: "Vital Data Collection",
+    url: "/vitals",
+    icon: Heart,
+    description: "Cardiac vital signs monitoring"
+  },
+  {
+    title: "Appointment Booking",
+    url: "/appointments",
+    icon: Calendar,
+    description: "Schedule cardiac consultations"
+  },
+  {
     title: "Doctor Analysis",
     url: "/analysis",
     icon: Stethoscope,
@@ -114,7 +126,7 @@ export function AppSidebar() {
                   AIAA-NGO
                 </h1>
                 <p className="text-sm text-sidebar-foreground/70">
-                  Surgery Management System
+                  Cardiovascular Patient Management System
                 </p>
               </div>
             )}
